@@ -1,6 +1,11 @@
 package piercinghunter;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,15 +37,21 @@ public class Main {
      */
 	
 	 static boolean getCheckedData   = true;
+	 static ArrayList<String> stocksToCheck = new ArrayList<String>();
 	 static ArrayList<Stock>  stocks = new ArrayList<Stock>();
 	 static ArrayList<String> stocksWithPiercing = new ArrayList<String>();
 	 static ArrayList<String> stocksWithErrors   = new ArrayList<String>();
 	 static ObjectMapper objectMapper = new ObjectMapper();
+	
+	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
+	 static Date date = new Date(); 
+	 
+	 
 	 static boolean piercingConfirmer = true;
 	 static boolean piercingfinder = false;
 	 
 	public static void main(String[] args) throws Exception {
-
+ 
 	    //for debuging
 //		if (checkForPiercing("XXII")) {
 //			System.out.println("We have a piercing here!!!!!");
@@ -49,51 +60,82 @@ public class Main {
 //		}
 		if (piercingConfirmer) {
 			System.out.println("confirmer is workings");
+			
+			 try {
+				String latestFileCreated = "22_07_201812_01_31";
+	            File f = new File(System.getProperty("user.dir")
+	            		+ "\\src\\test\\resources\\piercings\\"
+	            		+ latestFileCreated 
+	            		+".txt");
+
+	            BufferedReader b = new BufferedReader(new FileReader(f));
+
+	            String readLine = "";
+
+	            System.out.println("Reading file using Buffered Reader");
+
+	            while ((readLine = b.readLine()) != null) {
+	            	stocksToCheck.add(readLine);
+	            }
+	            b.close();
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+			 
+		    System.out.println("We need to check " + stocksToCheck.size());
+		    getPiercingConfirmation(); 
 		}
 		
 		if (piercingfinder) {
-			SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
-		    Date date = new Date();  
-		    String fileName = formatter.format(date);
-		    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + fileName +".txt";
-			PrintWriter writer = new PrintWriter(filePath, "UTF-8");
-			try {
-				stocks = objectMapper
-						 .readValue(Unirest.get("https://api.iextrading.com/1.0/ref-data/symbols")
-						 .asJson()
-						 .getRawBody(),new TypeReference<List<Stock>>(){});
-			} catch (Exception e) {
-				System.exit(0);
-			}
-			
-			int requestNum = 0;
-			int foundPiercings = 0;
-			
-			String symbol;
-			for (Stock s : stocks) {
-				if (s.type.equals("cs") || s.type.equals("et")) {
-					System.out.println(++requestNum + ". Checking " + s.symbol);
-					symbol = s.symbol.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
-					if (getSymbolData(symbol)){
-						stocksWithPiercing.add(symbol);
-						writer.println(++foundPiercings + " : "+symbol);
-						writer.flush();
-					} else {
-						System.out.println(symbol + " No Piercing");
-						if (stocksWithPiercing.size() > 0) {
-							System.out.println("piercing found on " + stocksWithPiercing.size());
-						}
-					}
-					//Thread.sleep(500); //api call restrictions
-				}		
-			}
-			writer.close();
+			piercingFinder();
 		}
 	   
 	}
 	
+	private static void getPiercingConfirmation() {	
+		
+	}
 	
-	private static boolean getSymbolData(String stock) throws Exception {
+	private static void piercingFinder() throws Exception {
+		String fileName = formatter.format(date);
+	    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + fileName +".txt";
+		PrintWriter writer = new PrintWriter(filePath, "UTF-8");
+		try {
+			stocks = objectMapper
+					 .readValue(Unirest.get("https://api.iextrading.com/1.0/ref-data/symbols")
+					 .asJson()
+					 .getRawBody(),new TypeReference<List<Stock>>(){});
+		} catch (Exception e) {
+			System.exit(0);
+		}
+		
+		int requestNum = 0;
+		int foundPiercings = 0;
+		
+		String symbol;
+		for (Stock s : stocks) {
+			if (s.type.equals("cs") || s.type.equals("et")) {
+				System.out.println(++requestNum + ". Checking " + s.symbol);
+				symbol = s.symbol.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
+				if (getPiercings(symbol)){
+					stocksWithPiercing.add(symbol);
+					writer.println(++foundPiercings + " : "+symbol);
+					writer.flush();
+				} else {
+					System.out.println(symbol + " No Piercing");
+					if (stocksWithPiercing.size() > 0) {
+						System.out.println("piercing found on " + stocksWithPiercing.size());
+					}
+				}
+				//Thread.sleep(500); //api call restrictions
+			}		
+		}
+		writer.close();
+	}
+	
+	
+	private static boolean getPiercings(String stock) throws Exception {
 		HttpResponse<JsonNode> jsonResponse = null;
 		JSONObject stocks = new JSONObject();
 		try {
