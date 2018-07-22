@@ -59,10 +59,16 @@ public class Main {
 //			System.out.println("No piercing");
 //		}
 		if (piercingConfirmer) {
+		  
 			System.out.println("confirmer is workings");
+			String latestFileCreated = "22_07_201812_01_31";
+		    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\confirmation" + latestFileCreated +".txt";
+			PrintWriter writer = new PrintWriter(filePath, "UTF-8");
 			
-			 try {
-				String latestFileCreated = "22_07_201812_01_31";
+			int requestNum = 0;
+			int confirmedPiercings = 0;
+			
+			 try {	
 	            File f = new File(System.getProperty("user.dir")
 	            		+ "\\src\\test\\resources\\piercings\\"
 	            		+ latestFileCreated 
@@ -77,6 +83,8 @@ public class Main {
 	            while ((readLine = b.readLine()) != null) {
 	            	stocksToCheck.add(readLine);
 	            }
+	            
+	           
 	            b.close();
 
 	        } catch (Exception e) {
@@ -84,7 +92,15 @@ public class Main {
 	        }
 			 
 		    System.out.println("We need to check " + stocksToCheck.size());
-		    getPiercingConfirmation(); 
+		    //debug data
+		    
+		    String stockToCheck = "";
+			for (String s : stocksToCheck) {
+				stockToCheck = s.split(":")[1].trim();
+				System.out.println(++requestNum + ". Checking " + stockToCheck);
+				writer.println(getPiercingConfirmation(stockToCheck));
+				writer.flush();		
+			}  
 		}
 		
 		if (piercingfinder) {
@@ -93,8 +109,59 @@ public class Main {
 	   
 	}
 	
-	private static void getPiercingConfirmation() {	
+	private static String getPiercingConfirmation(String stock){	
+		System.out.println(stock);
+		String stringToReturn = stock+": ";
+		HttpResponse<JsonNode> jsonResponse = null;
+		JSONObject stocks = new JSONObject();
+		try {
+			jsonResponse = Unirest
+					.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol="+ stock + "&apikey=C0F6Z5D4ELEKDZ0U")
+					.asJson();	
+		} catch (Exception e) {
+			System.out.println("program terminated");
+			System.exit(0);
+		}
 		
+		if (jsonResponse != null && jsonResponse.getStatus() == 200) {
+			try {
+				JSONObject obj = new JSONObject(jsonResponse.getBody());
+				JSONArray arr = obj.getJSONArray("array");
+				System.out.println(obj);
+				stocks = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
+			} catch(Exception exception) {
+				stocksWithErrors.add(stock);
+				stringToReturn += " Error occured";
+				return stringToReturn;
+			}
+			 
+			List<String> jsonValues = new ArrayList<String>();
+		    for (int i = 0; i < stocks.names().length(); i++) {
+		    	jsonValues.add(((String)stocks.names().get(i)));
+		    }
+		    Collections.sort(jsonValues);
+//		    System.out.println(jsonValues);
+		    
+		    float lastDayClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close");
+		    float lastDayHigh  = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("2. high"); 
+//		    System.out.println(lastDayClose);
+//		    System.out.println(lastDayHigh);
+		    
+		    float dayBeforeClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
+		    System.out.println("day before close: " + dayBeforeClose);
+		    System.out.println("last day high: "    + lastDayHigh);
+		    System.out.println("last day closed "   + lastDayClose);
+		    if (dayBeforeClose < lastDayClose || dayBeforeClose < lastDayHigh) {
+		    	stringToReturn += "*** SUCCESS *** ";
+		    } else {
+		    	stringToReturn += "*FAILED* ";
+		    }
+		    float lastDayClosePercentage = (lastDayClose - dayBeforeClose)/lastDayClose * 100;
+		    float lastDayHighPercentage  = (lastDayHigh  - dayBeforeClose)/lastDayHigh  * 100;
+			
+		    stringToReturn += " from close: " + lastDayClosePercentage +"%, from high: "+lastDayHighPercentage+"%";
+		}
+		return stringToReturn;
 	}
 	
 	private static void piercingFinder() throws Exception {
