@@ -37,78 +37,72 @@ public class Main {
      */
 	
 	 static boolean getCheckedData   = true;
-	 static ArrayList<String> stocksToCheck = new ArrayList<String>();
+	 
 	 static ArrayList<Stock>  stocks = new ArrayList<Stock>();
 	 static ArrayList<String> stocksWithPiercing = new ArrayList<String>();
 	 static ArrayList<String> stocksWithErrors   = new ArrayList<String>();
 	 static ObjectMapper objectMapper = new ObjectMapper();
+	 static boolean onlyHighVolume = true;
 	
 	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
 	 static Date date = new Date(); 
 	 
-	 
-	 static boolean piercingConfirmer = true;
-	 static boolean piercingfinder = false;
-	 
 	public static void main(String[] args) throws Exception {
- 
 	    //for debuging
 //		if (checkForPiercing("XXII")) {
 //			System.out.println("We have a piercing here!!!!!");
 //		} else {
 //			System.out.println("No piercing");
 //		}
-		if (piercingConfirmer) {
-		  
-			System.out.println("confirmer is workings");
-			String latestFileCreated = "22_07_201812_01_31";
-		    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\confirmation" + latestFileCreated +".txt";
-			PrintWriter writer = new PrintWriter(filePath, "UTF-8");
-			
-			int requestNum = 0;
-			int confirmedPiercings = 0;
-			
-			 try {	
-	            File f = new File(System.getProperty("user.dir")
-	            		+ "\\src\\test\\resources\\piercings\\"
-	            		+ latestFileCreated 
-	            		+".txt");
-
-	            BufferedReader b = new BufferedReader(new FileReader(f));
-
-	            String readLine = "";
-
-	            System.out.println("Reading file using Buffered Reader");
-
-	            while ((readLine = b.readLine()) != null) {
-	            	stocksToCheck.add(readLine);
-	            }
-	            
-	           
-	            b.close();
-
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-			 
-		    System.out.println("We need to check " + stocksToCheck.size());
-		    //debug data
-		    
-		    String stockToCheck = "";
-			for (String s : stocksToCheck) {
-				stockToCheck = s.split(":")[1].trim();
-				System.out.println(++requestNum + ". Checking " + stockToCheck);
-				writer.println(getPiercingConfirmation(stockToCheck));
-				writer.flush();		
-			}  
-		}
-		
-		if (piercingfinder) {
-			piercingFinder();
-		}
-	   
+		piercingConfirmationSetup("piercing22_07_201819_41_30");
+	
+//		piercingFinder();
+			   
 	}
 	
+	private static ArrayList<String> readFileToArr(String filename) {
+		 ArrayList<String> stocksToCheck = new ArrayList<String>();
+		 String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + filename +".txt";		 
+		 try {	 
+			File f = new File(filePath);
+
+            BufferedReader b = new BufferedReader(new FileReader(f));
+
+            String readLine = "";
+
+            System.out.println("Reading file using Buffered Reader");
+
+            while ((readLine = b.readLine()) != null) {
+            	stocksToCheck.add(readLine);
+            }
+            b.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+		return stocksToCheck;
+	}
+	
+	//confirmation setup
+	private static void piercingConfirmationSetup(String filename) throws Exception {
+		 //file to write to
+		 String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\confirmation" + filename +".txt";
+		 ArrayList<String> stocksToCheck = new ArrayList<String>();		
+		 stocksToCheck = readFileToArr(filename);
+		 int requestNum = 0;		 	
+		 PrintWriter writer = new PrintWriter(filePath, "UTF-8");
+		 System.out.println("We need to check " + stocksToCheck.size());
+	    
+	    String stockToCheck;
+		for (String s : stocksToCheck) {
+			stockToCheck = s.split(":")[1].trim();
+			System.out.println(++requestNum + ". Checking " + stockToCheck);
+			writer.println(getPiercingConfirmation(stockToCheck));
+			writer.flush();		
+		}  
+		writer.close();
+	}
+	
+	//confirmation checker
 	private static String getPiercingConfirmation(String stock){	
 		System.out.println(stock);
 		String stringToReturn = stock+": ";
@@ -137,7 +131,7 @@ public class Main {
 			 
 			List<String> jsonValues = new ArrayList<String>();
 		    for (int i = 0; i < stocks.names().length(); i++) {
-		    	jsonValues.add(((String)stocks.names().get(i)));
+		    	jsonValues.add(((String)stocks.names().get(i)));	    	
 		    }
 		    Collections.sort(jsonValues);
 //		    System.out.println(jsonValues);
@@ -148,9 +142,9 @@ public class Main {
 //		    System.out.println(lastDayHigh);
 		    
 		    float dayBeforeClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
-		    System.out.println("day before close: " + dayBeforeClose);
-		    System.out.println("last day high: "    + lastDayHigh);
-		    System.out.println("last day closed "   + lastDayClose);
+//		    System.out.println("day before close: " + dayBeforeClose);
+//		    System.out.println("last day high: "    + lastDayHigh);
+//		    System.out.println("last day closed "   + lastDayClose);
 		    if (dayBeforeClose < lastDayClose || dayBeforeClose < lastDayHigh) {
 		    	stringToReturn += "*** SUCCESS *** ";
 		    } else {
@@ -164,9 +158,29 @@ public class Main {
 		return stringToReturn;
 	}
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	private static void piercingFinder() throws Exception {
 		String fileName = formatter.format(date);
-	    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + fileName +".txt";
+	    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\piercing" + fileName +".txt";
 		PrintWriter writer = new PrintWriter(filePath, "UTF-8");
 		try {
 			stocks = objectMapper
@@ -195,7 +209,7 @@ public class Main {
 						System.out.println("piercing found on " + stocksWithPiercing.size());
 					}
 				}
-				//Thread.sleep(500); //api call restrictions
+				//Thread.sleep(10500); //api call restrictions
 			}		
 		}
 		writer.close();
@@ -231,14 +245,30 @@ public class Main {
 			//System.out.println(post_id.names());
 			//Collections.sort();
 			List<String> jsonValues = new ArrayList<String>();
+			int volume = 0;
+			int biggestVolume = 0;
 		    for (int i = 0; i < stocks.names().length(); i++) {
 		    	jsonValues.add(((String)stocks.names().get(i)));
+		    	volume = stocks.getJSONObject(jsonValues.get(i)).getInt("5. volume");
+		    	System.out.println(volume);
+		    	if (biggestVolume < volume) {
+		    		biggestVolume = volume;
+		    	} 	
+		    }
+		    if (onlyHighVolume) {
+		    	if (biggestVolume < 500000) {
+		    		return false;
+		    	}
 		    }
 		    Collections.sort(jsonValues);
+		    
+//		    stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getInt("5. volume")
+		    
+		    
 //		    System.out.println("*****");
 //		    System.out.println("Date of info: " + jsonValues.get(jsonValues.size()-1));
 //		    System.out.println(stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)));
-//		   
+		    
 		    BigDecimal lastDayClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getBigDecimal("4. close"); 
 		   
 //		    System.out.println("Last day close: " + lastDayClose);

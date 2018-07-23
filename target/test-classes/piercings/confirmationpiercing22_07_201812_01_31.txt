@@ -51,7 +51,7 @@ DRIO: *** SUCCESS ***  from close: 0.75758404%, from high: 2.2388127%
 EEA: *** SUCCESS ***  from close: 0.9384791%, from high: 0.9384791%
 EFL: *** SUCCESS ***  from close: 0.10615954%, from high: 0.20150657%
 EFX: *** SUCCESS ***  from close: 0.51379454%, from high: 0.7960921%
-EML:  Error occured
+EML: *** SUCCESS ***  from close: 1.7271158%, from high: 2.7350402%
 EOLS: *** SUCCESS ***  from close: 2.7093558%, from high: 5.0480733%
 ERIE: *** SUCCESS ***  from close: 0.75783116%, from high: 1.3248311%
 ERY: *** SUCCESS ***  from close: 1.0144883%, from high: 1.8396072%
