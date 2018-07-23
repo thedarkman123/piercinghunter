@@ -27,19 +27,20 @@ public class Main {
 	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
 	 static Date date = new Date(); 
 	 
-	 static boolean findPatterns = false;
+	 static boolean findPatterns = true;
 	 static boolean onlyHighVolume = true;
 	 
-	 public static final String HARAMI    = "HARAMI";
-	 public static final String ERROR     = "ERROR";
-	 public static final String LOWVOLUME = "LOWVOLUME";
-	 public static final String PIERCING  = "PIERCING";
-	 public static final String NOTHING   = "NOTHING";
+	 public static final String HARAMI      = "HARAMI";
+	 public static final String ERROR       = "ERROR";
+	 public static final String LOWVOLUME   = "LOWVOLUME";
+	 public static final String PIERCING    = "PIERCING";
+	 public static final String NOTHING     = "NOTHING";
+	 public static final String MORNINGSTAR = "MORNINGSTAR";
 	 
 	public static void main(String[] args) throws Exception {
 		
 		//confirmations, put file path
-		confirmation("23_07_201810_25_22",PIERCING);
+		//confirmation("23_07_201810_25_22",PIERCING);
 		
 		if (findPatterns) {
 			ArrayList<Stock>  stocks = getAllStocks();
@@ -151,7 +152,19 @@ public class Main {
 	}
 	
 	private static boolean checkForHarami(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {		
-		return false;
+	    if (dayBeforeClose < dayBeforeOpen) { //day before trend down
+		   	 if (lastDayClose > lastDayOpen) {//last day trend up
+		   		  if ((lastDayOpen > dayBeforeClose) && (lastDayClose < dayBeforeOpen)) {
+		   			//let's make it much better
+		   			return true; //Potential Harami
+		   		  } 
+		    } else {
+		    	return false; //Continues down, nothing here
+		    }
+	   } else {
+		   return false; //day before uptrend
+	   }
+	   return false;
 	}
 	
 	private static boolean checkForPiercing(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {
