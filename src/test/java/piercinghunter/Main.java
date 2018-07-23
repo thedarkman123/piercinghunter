@@ -23,26 +23,11 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 
 public class Main {
-    /*
-     *  1) using api to get all stock symbols done
-     *  2) get day data of each stock done
-     *  3) get hourly (last hour) of each stock - later
-     *  endpoints: https://api.iextrading.com/1.0/ref-data/symbols
-     * https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&apikey=YVD6NCJOTY1PF66U
-        
-        4) create txt file and put the found stocks there :)
-        
-  		5) check if peircing confirmed:
-  		
-     */
-	
-	 
 
-	 static ArrayList<String> stocksWithErrors   = new ArrayList<String>();
 	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
 	 static Date date = new Date(); 
 	 
-	 static boolean findPatterns = true;
+	 static boolean findPatterns = false;
 	 static boolean onlyHighVolume = true;
 	 
 	 public static final String HARAMI    = "HARAMI";
@@ -52,7 +37,9 @@ public class Main {
 	 public static final String NOTHING   = "NOTHING";
 	 
 	public static void main(String[] args) throws Exception {
-//		piercingConfirmationSetup("piercing22_07_201819_41_30");
+		
+		//confirmations, put file path
+		confirmation("23_07_201810_25_22",PIERCING);
 		
 		if (findPatterns) {
 			ArrayList<Stock>  stocks = getAllStocks();
@@ -64,7 +51,7 @@ public class Main {
 	private static void initiatePatternSearch(ArrayList<Stock> stocks) throws Exception {
 		System.out.println("program started");
 		String fileName = formatter.format(date);
-	    String filePathToPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + fileName +".txt";
+	    String filePathToPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
 	    String filePathToHarami   = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
 	    String filePathToErrors   = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
 	    PrintWriter piercingWriter = new PrintWriter(filePathToPiercing, "UTF-8");
@@ -124,7 +111,6 @@ public class Main {
 				dailyStockInfo = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
 			} catch(Exception exception) {
 				//if error get all the errors stocks into a list
-				stocksWithErrors.add(stock);
 				System.out.println("Error here, this is the json for stock " + stock);
 				System.out.println(obj);
 				return ERROR;
@@ -204,9 +190,8 @@ public class Main {
 		return stocks;
 	}
 	
-	private static ArrayList<String> readFileToArr(String filename) {
-		 ArrayList<String> stocksToCheck = new ArrayList<String>();
-		 String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + filename +".txt";		 
+	private static ArrayList<String> readFileToArr(String filePath) {
+		 ArrayList<String> stocksToCheck = new ArrayList<String>();	 
 		 try {	 
 			File f = new File(filePath);
 
@@ -228,22 +213,27 @@ public class Main {
 	
 	
 	//confirmation setup
-	private static void piercingConfirmationSetup(String filename) throws Exception {
+	private static void confirmation(String fileNameToCheck,String pattern) throws Exception {
 		 //file to write to
-		 String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\confirmation" + filename +".txt";
-		 ArrayList<String> stocksToCheck = readFileToArr(filename);			 	
-		 PrintWriter writer = new PrintWriter(filePath, "UTF-8");
-		 System.out.println("We need to check " + stocksToCheck.size());
+		String filePathToCheck = System.getProperty("user.dir")+"\\src\\test\\resources\\" + pattern.toLowerCase() + "\\" + fileNameToCheck +".txt";	
+		//System.out.println(filePathToCheck);
+		ArrayList<String> stocksToCheck = readFileToArr(filePathToCheck);
+		//System.out.println("We need to check " + stocksToCheck.size());
+		String filePathToWrite = System.getProperty("user.dir")+"\\src\\test\\resources\\confirmations\\" 
+		+ pattern.toLowerCase() 
+		+ fileNameToCheck
+		+".txt";
+		PrintWriter writer = new PrintWriter(filePathToWrite, "UTF-8");
+		System.out.println("We need to check " + stocksToCheck.size());
 		for (String s : stocksToCheck) {
-			writer.println(getPiercingConfirmation(s));
+			writer.println(getPatternConfirmation(s));
 			writer.flush();		
 		}  
 		writer.close();
 	}
 	
 	//confirmation checker
-	private static String getPiercingConfirmation(String stock){	
-		System.out.println(stock);
+	private static String getPatternConfirmation(String stock){	
 		String stringToReturn = stock+": ";
 		HttpResponse<JsonNode> jsonResponse = null;
 		JSONObject stocks = new JSONObject();
@@ -263,7 +253,6 @@ public class Main {
 				System.out.println(obj);
 				stocks = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
 			} catch(Exception exception) {
-				stocksWithErrors.add(stock);
 				stringToReturn += " Error occured";
 				return stringToReturn;
 			}
@@ -290,11 +279,6 @@ public class Main {
 		}
 		return stringToReturn;
 	}
-	
-
-	
-	
-
 	
 
 }
