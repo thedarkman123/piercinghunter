@@ -36,28 +36,172 @@ public class Main {
   		
      */
 	
-	 static boolean getCheckedData   = true;
 	 
-	 static ArrayList<Stock>  stocks = new ArrayList<Stock>();
-	 static ArrayList<String> stocksWithPiercing = new ArrayList<String>();
+
 	 static ArrayList<String> stocksWithErrors   = new ArrayList<String>();
-	 static ObjectMapper objectMapper = new ObjectMapper();
-	 static boolean onlyHighVolume = true;
-	
 	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
 	 static Date date = new Date(); 
 	 
+	 static boolean findPatterns = true;
+	 static boolean onlyHighVolume = true;
+	 
+	 public static final String HARAMI    = "HARAMI";
+	 public static final String ERROR     = "ERROR";
+	 public static final String LOWVOLUME = "LOWVOLUME";
+	 public static final String PIERCING  = "PIERCING";
+	 public static final String NOTHING   = "NOTHING";
+	 
 	public static void main(String[] args) throws Exception {
-	    //for debuging
-//		if (checkForPiercing("XXII")) {
-//			System.out.println("We have a piercing here!!!!!");
-//		} else {
-//			System.out.println("No piercing");
-//		}
-		piercingConfirmationSetup("piercing22_07_201819_41_30");
+//		piercingConfirmationSetup("piercing22_07_201819_41_30");
+		
+		if (findPatterns) {
+			ArrayList<Stock>  stocks = getAllStocks();
+			System.out.println(stocks);
+			initiatePatternSearch(stocks);
+		}		   
+	}
 	
-//		piercingFinder();
-			   
+	private static void initiatePatternSearch(ArrayList<Stock> stocks) throws Exception {
+		System.out.println("program started");
+		String fileName = formatter.format(date);
+	    String filePathToPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\" + fileName +".txt";
+	    String filePathToHarami   = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
+	    String filePathToErrors   = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
+	    PrintWriter piercingWriter = new PrintWriter(filePathToPiercing, "UTF-8");
+	    PrintWriter haramiWriter   = new PrintWriter(filePathToHarami, "UTF-8");
+	    PrintWriter errorWriter    = new PrintWriter(filePathToErrors, "UTF-8");
+
+		int stockNum = 0;	
+		String symbol;
+		String patternFound;
+		for (Stock s : stocks) {
+			if (s.type.equals("cs") || s.type.equals("et")) {
+				System.out.println(++stockNum + ". Checking " + s.symbol);
+				symbol = s.symbol.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
+				patternFound = findPatterns(symbol);
+				if (patternFound.equals(ERROR)) {
+					System.out.println("Found ERROR in stock " + symbol);
+					errorWriter.println(symbol);
+					haramiWriter.flush();
+				} else if (patternFound.equals(HARAMI)) {
+					System.out.println("Found HARAMI in stock " + symbol);
+					haramiWriter.println(symbol);
+					haramiWriter.flush();
+				} else if (patternFound.equals(PIERCING)) {
+					System.out.println("Found PIERCING in stock " + symbol);
+					piercingWriter.println(symbol);
+					piercingWriter.flush();
+				} else if (patternFound.equals(LOWVOLUME)) {
+					//MAYBE I WILL DO SOMETHING WITH THIS LATER
+				}
+			}		
+		}
+		piercingWriter.close();
+		haramiWriter.close();
+		errorWriter.close();
+		System.out.println("program Done");
+	}
+	
+	private static String findPatterns(String stock) throws Exception {
+		//get stock data
+		HttpResponse<JsonNode> jsonResponse = null;
+		JSONObject dailyStockInfo = new JSONObject();
+		try {
+			jsonResponse = Unirest
+					.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol="+ stock + "&apikey=C0F6Z5D4ELEKDZ0U")
+					.asJson();	
+		} catch (Exception e) {
+			System.out.println("error with "+ stock + " moving on");
+			return ERROR;
+		}
+		//check of data received with 200 code
+		if (jsonResponse != null && jsonResponse.getStatus() == 200) {
+			//get stock data
+			JSONObject obj = new JSONObject(jsonResponse.getBody());
+			JSONArray arr = obj.getJSONArray("array");
+			try {
+				//try get stock info
+				dailyStockInfo = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
+			} catch(Exception exception) {
+				//if error get all the errors stocks into a list
+				stocksWithErrors.add(stock);
+				System.out.println("Error here, this is the json for stock " + stock);
+				System.out.println(obj);
+				return ERROR;
+			}
+		} else {
+			System.out.println("Response is null or status incorrect, moving on");
+			return ERROR;
+		}
+
+		//sort the data (dates), and check volume info
+		List<String> jsonValues = new ArrayList<String>();
+		int volume = 0;
+		int biggestVolume = 0;
+	    for (int i = 0; i < dailyStockInfo.names().length(); i++) {
+	    	jsonValues.add(((String)dailyStockInfo.names().get(i)));
+	    	volume = dailyStockInfo.getJSONObject(jsonValues.get(i)).getInt("5. volume");
+	    	if (biggestVolume < volume) {
+	    		biggestVolume = volume;
+	    	} 	
+	    }
+	    if (onlyHighVolume) {
+	    	if (biggestVolume < 500000) {
+	    		return LOWVOLUME;
+	    	}
+	    }
+        Collections.sort(jsonValues);
+        
+        //get all needed data	    
+	    float lastDayClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close"); 
+	    float lastDayOpen = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("1. open"); 
+	    float dayBeforeClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
+	    float dayBeforeOpen = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("1. open"); 
+	    
+	    if (checkForHarami(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen))   return HARAMI;
+	    if (checkForPiercing(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen)) return PIERCING;
+	    return NOTHING;
+	    
+	}
+	
+	private static boolean checkForHarami(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {		
+		return false;
+	}
+	
+	private static boolean checkForPiercing(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {
+	    if (dayBeforeClose < dayBeforeOpen) { //day before trend down
+	   	 if (lastDayClose > lastDayOpen) {//last day trend up
+		    	if (lastDayOpen < dayBeforeClose) { //the open last day, is lower then close day before
+		    		float middlePoint = (dayBeforeOpen + ((dayBeforeClose - dayBeforeOpen))/2);
+		    		if (middlePoint < lastDayClose) { //confirm piercing
+		    			return true;  //piercing!
+		    		} else {
+		    			return false; //no piercing
+		    		}		
+		    	} else {
+		    		return false; //the open is higher that the day before, or the same
+		    	}
+	    } else {
+	    	return false; //Continues down, nothing here
+	    }
+	   } else {
+		   return false; //day before uptrend
+	   }
+	}
+	
+	
+	private static ArrayList<Stock> getAllStocks(){
+		ArrayList<Stock> stocks = new ArrayList<>();
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			stocks = objectMapper
+					 .readValue(Unirest.get("https://api.iextrading.com/1.0/ref-data/symbols")
+					 .asJson()
+					 .getRawBody(),new TypeReference<List<Stock>>(){});
+		} catch (Exception e) {
+			System.exit(0);
+		}
+		return stocks;
 	}
 	
 	private static ArrayList<String> readFileToArr(String filename) {
@@ -82,21 +226,16 @@ public class Main {
 		return stocksToCheck;
 	}
 	
+	
 	//confirmation setup
 	private static void piercingConfirmationSetup(String filename) throws Exception {
 		 //file to write to
 		 String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\confirmation" + filename +".txt";
-		 ArrayList<String> stocksToCheck = new ArrayList<String>();		
-		 stocksToCheck = readFileToArr(filename);
-		 int requestNum = 0;		 	
+		 ArrayList<String> stocksToCheck = readFileToArr(filename);			 	
 		 PrintWriter writer = new PrintWriter(filePath, "UTF-8");
 		 System.out.println("We need to check " + stocksToCheck.size());
-	    
-	    String stockToCheck;
 		for (String s : stocksToCheck) {
-			stockToCheck = s.split(":")[1].trim();
-			System.out.println(++requestNum + ". Checking " + stockToCheck);
-			writer.println(getPiercingConfirmation(stockToCheck));
+			writer.println(getPiercingConfirmation(s));
 			writer.flush();		
 		}  
 		writer.close();
@@ -134,17 +273,11 @@ public class Main {
 		    	jsonValues.add(((String)stocks.names().get(i)));	    	
 		    }
 		    Collections.sort(jsonValues);
-//		    System.out.println(jsonValues);
 		    
 		    float lastDayClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close");
 		    float lastDayHigh  = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("2. high"); 
-//		    System.out.println(lastDayClose);
-//		    System.out.println(lastDayHigh);
 		    
 		    float dayBeforeClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
-//		    System.out.println("day before close: " + dayBeforeClose);
-//		    System.out.println("last day high: "    + lastDayHigh);
-//		    System.out.println("last day closed "   + lastDayClose);
 		    if (dayBeforeClose < lastDayClose || dayBeforeClose < lastDayHigh) {
 		    	stringToReturn += "*** SUCCESS *** ";
 		    } else {
@@ -158,171 +291,10 @@ public class Main {
 		return stringToReturn;
 	}
 	
+
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	private static void piercingFinder() throws Exception {
-		String fileName = formatter.format(date);
-	    String filePath = System.getProperty("user.dir")+"\\src\\test\\resources\\piercings\\piercing" + fileName +".txt";
-		PrintWriter writer = new PrintWriter(filePath, "UTF-8");
-		try {
-			stocks = objectMapper
-					 .readValue(Unirest.get("https://api.iextrading.com/1.0/ref-data/symbols")
-					 .asJson()
-					 .getRawBody(),new TypeReference<List<Stock>>(){});
-		} catch (Exception e) {
-			System.exit(0);
-		}
-		
-		int requestNum = 0;
-		int foundPiercings = 0;
-		
-		String symbol;
-		for (Stock s : stocks) {
-			if (s.type.equals("cs") || s.type.equals("et")) {
-				System.out.println(++requestNum + ". Checking " + s.symbol);
-				symbol = s.symbol.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
-				if (getPiercings(symbol)){
-					stocksWithPiercing.add(symbol);
-					writer.println(++foundPiercings + " : "+symbol);
-					writer.flush();
-				} else {
-					System.out.println(symbol + " No Piercing");
-					if (stocksWithPiercing.size() > 0) {
-						System.out.println("piercing found on " + stocksWithPiercing.size());
-					}
-				}
-				//Thread.sleep(10500); //api call restrictions
-			}		
-		}
-		writer.close();
-	}
-	
-	
-	private static boolean getPiercings(String stock) throws Exception {
-		HttpResponse<JsonNode> jsonResponse = null;
-		JSONObject stocks = new JSONObject();
-		try {
-			jsonResponse = Unirest
-					.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol="+ stock + "&apikey=C0F6Z5D4ELEKDZ0U")
-					.asJson();	
-		} catch (Exception e) {
-			System.out.println("program terminated");
-			System.exit(0);
-		}
-		
-		if (jsonResponse != null && jsonResponse.getStatus() == 200) {
-			JSONObject obj = new JSONObject(jsonResponse.getBody());
-			JSONArray arr = obj.getJSONArray("array");
-			
-			//System.out.println(obj);
-			try {
-				stocks = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
-			} catch(Exception exception) {
-				stocksWithErrors.add(stock);
-				System.out.println("Error here");
-				System.out.println(obj);
-				return false;
-			}
-			 
-			//System.out.println(post_id.names());
-			//Collections.sort();
-			List<String> jsonValues = new ArrayList<String>();
-			int volume = 0;
-			int biggestVolume = 0;
-		    for (int i = 0; i < stocks.names().length(); i++) {
-		    	jsonValues.add(((String)stocks.names().get(i)));
-		    	volume = stocks.getJSONObject(jsonValues.get(i)).getInt("5. volume");
-		    	System.out.println(volume);
-		    	if (biggestVolume < volume) {
-		    		biggestVolume = volume;
-		    	} 	
-		    }
-		    if (onlyHighVolume) {
-		    	if (biggestVolume < 500000) {
-		    		return false;
-		    	}
-		    }
-		    Collections.sort(jsonValues);
-		    
-//		    stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getInt("5. volume")
-		    
-		    
-//		    System.out.println("*****");
-//		    System.out.println("Date of info: " + jsonValues.get(jsonValues.size()-1));
-//		    System.out.println(stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)));
-		    
-		    BigDecimal lastDayClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getBigDecimal("4. close"); 
-		   
-//		    System.out.println("Last day close: " + lastDayClose);
-		    BigDecimal lastDayOpen = stocks.getJSONObject(jsonValues.get(jsonValues.size()-1)).getBigDecimal("1. open"); 
-//		    System.out.println("Last day open: " + lastDayOpen);
-		    
-//		    System.out.println("*****");
-		    
-//		    System.out.println("Day before Date: " + jsonValues.get(jsonValues.size()-3));
-//		    
-//		    System.out.println(stocks.getJSONObject(jsonValues.get(jsonValues.size()-3)));
-		    BigDecimal dayBeforeClose = stocks.getJSONObject(jsonValues.get(jsonValues.size()-2)).getBigDecimal("4. close");
-//		    System.out.println("Day before close: " + dayBeforeClose);
-		    BigDecimal dayBeforeOpen = stocks.getJSONObject(jsonValues.get(jsonValues.size()-2)).getBigDecimal("1. open"); 
-//		    System.out.println("Day before open: " + dayBeforeOpen);
-		    
-//		    System.out.println("****************");
-		    //first of all, the day before, we need a down trend
-		    if (dayBeforeOpen.compareTo(dayBeforeClose) > 0) {
-//		    	System.out.println("Day before we going down");
-		    	//now this day we need uptrend
-		    	 if (lastDayOpen.compareTo(lastDayClose) < 0) {
-			    	//now this day we need uptrend
-//			    	System.out.println("This day, going up");
-			    	//check for piercing potential
-			    	if (lastDayOpen.compareTo(dayBeforeClose) < 0) { //check that last day open starts lower than before close
-//			    		System.out.println("Potential piercing");
-//			    		System.out.println(dayBeforeOpen.floatValue());
-//			    		System.out.println(dayBeforeClose.floatValue());
-//			    		
-			    		BigDecimal middlePoint = new BigDecimal((dayBeforeOpen.floatValue() + ((dayBeforeClose.floatValue() - dayBeforeOpen.floatValue()))/2));
-//			    		System.out.println("middle point: " + middlePoint);
-			    		if (middlePoint.compareTo(lastDayClose) < 0) { //confirm piercing
-			    			return true;
-			    		} else {
-			    			return false;
-			    		}
-			    		//float middleNum = (lastDayOpen.floatValue() - dayBeforeClose.floatValue()); 
-//			    		System.out.println(middleNum);
-			    		//System.out.println(dayBeforeOpen - dayBeforeClose);
-			    		
-			    	} else {
-			    		return false;
-			    	}
-			    } else {
-			    	return false; //"DownTrend, Nothing here"
-			    }
-		    } else {
-		    	return false; //day before uptrend
-		    }
-		} else {
-			return false;
-		}
-	}
+
 	
 
 }
