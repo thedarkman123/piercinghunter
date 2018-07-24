@@ -29,6 +29,9 @@ public class Main {
 	 
 	 static boolean findPatterns = true;
 	 static boolean onlyHighVolume = true;
+	 static boolean getStocksFromFile = true;
+	 static float   priceUntil = 25;
+	 static float   priceFrom  = 2.50f;
 	 
 	 public static final String HARAMI      = "HARAMI";
 	 public static final String ERROR       = "ERROR";
@@ -40,7 +43,7 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		
 		//confirmations, put file path
-		//confirmation("23_07_201810_25_22",PIERCING);
+		//confirmation("23_07_201812_06_10",HARAMI);
 		
 		if (findPatterns) {
 			ArrayList<Stock>  stocks = getAllStocks();
@@ -52,12 +55,19 @@ public class Main {
 	private static void initiatePatternSearch(ArrayList<Stock> stocks) throws Exception {
 		System.out.println("program started");
 		String fileName = formatter.format(date);
-	    String filePathToPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
-	    String filePathToHarami   = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
-	    String filePathToErrors   = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
-	    PrintWriter piercingWriter = new PrintWriter(filePathToPiercing, "UTF-8");
-	    PrintWriter haramiWriter   = new PrintWriter(filePathToHarami, "UTF-8");
-	    PrintWriter errorWriter    = new PrintWriter(filePathToErrors, "UTF-8");
+		
+		//paths to files
+		String filePathToMorningStar = System.getProperty("user.dir")+"\\src\\test\\resources\\morningstar\\" + fileName +".txt";
+	    String filePathToPiercing    = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
+	    String filePathToHarami      = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
+	    String filePathToErrors      = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
+	    
+	    
+	    //initiate writers
+	    PrintWriter piercingWriter    = new PrintWriter(filePathToPiercing, "UTF-8");
+	    PrintWriter haramiWriter      = new PrintWriter(filePathToHarami, "UTF-8");
+	    PrintWriter errorWriter       = new PrintWriter(filePathToErrors, "UTF-8");
+	    PrintWriter morningStarWriter = new PrintWriter(filePathToMorningStar, "UTF-8");
 
 		int stockNum = 0;	
 		String symbol;
@@ -81,12 +91,17 @@ public class Main {
 					piercingWriter.flush();
 				} else if (patternFound.equals(LOWVOLUME)) {
 					//MAYBE I WILL DO SOMETHING WITH THIS LATER
+				} else if (patternFound.equals(MORNINGSTAR)) {
+					System.out.println("Found MORNINGSTAR in stock " + symbol);
+					morningStarWriter.println(symbol);
+					morningStarWriter.flush();
 				}
 			}		
 		}
 		piercingWriter.close();
 		haramiWriter.close();
 		errorWriter.close();
+		morningStarWriter.close();
 		System.out.println("program Done");
 	}
 	
@@ -140,15 +155,48 @@ public class Main {
         Collections.sort(jsonValues);
         
         //get all needed data	    
-	    float lastDayClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close"); 
-	    float lastDayOpen = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("1. open"); 
-	    float dayBeforeClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
-	    float dayBeforeOpen = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("1. open"); 
+	    float lastDayClose    = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close"); 
+	    float lastDayOpen     = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("1. open"); 
+	    float dayBeforeClose  = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
+	    float dayBeforeOpen   = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("1. open"); 
+	    
+	    //filter those with not wanted prices
+	    if (lastDayClose < priceFrom || lastDayClose > priceUntil) {
+	    	return NOTHING;
+	    }
+	    
+	    //for morning and evening star
+	    float twoDaysBeforeOpen  = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-3)).getFloat("1. open");
+	    float twoDaysBeforeClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-3)).getFloat("4. close");
+	    
 	    
 	    if (checkForHarami(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen))   return HARAMI;
 	    if (checkForPiercing(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen)) return PIERCING;
+	    if (checkForMorningStar(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen,twoDaysBeforeOpen,twoDaysBeforeClose)) return MORNINGSTAR;
 	    return NOTHING;
 	    
+	}
+	
+	private static boolean checkForMorningStar(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen,float twoDaysBeforeOpen,float twoDaysBeforeClose) {
+		if (twoDaysBeforeOpen > twoDaysBeforeClose) { //2 days before, trend down
+			if (dayBeforeClose < twoDaysBeforeClose && dayBeforeOpen < twoDaysBeforeClose ) { // the day before candle is below the one before
+				if (lastDayOpen < lastDayClose) { //uptrend in the last day
+					//calculate middle point of 2 days ago
+					float middlePoint = (twoDaysBeforeOpen + ((twoDaysBeforeClose - twoDaysBeforeOpen))/2);
+					if (lastDayClose > middlePoint ) {
+						return true; //potential morning star
+					} else {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
 	}
 	
 	private static boolean checkForHarami(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {		
