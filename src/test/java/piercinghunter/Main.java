@@ -29,7 +29,6 @@ public class Main {
 	 
 	 static boolean findPatterns = true;
 	 static boolean onlyHighVolume = true;
-	 static boolean getStocksFromFile = true;
 	 static float   priceUntil = 25;
 	 static float   priceFrom  = 2.50f;
 	 
@@ -46,13 +45,47 @@ public class Main {
 		//confirmation("23_07_201812_06_10",HARAMI);
 		
 		if (findPatterns) {
-			ArrayList<Stock>  stocks = getAllStocks();
-			System.out.println(stocks);
+			ArrayList<String>  stocks = getAllStocks(true);
 			initiatePatternSearch(stocks);
 		}		   
 	}
 	
-	private static void initiatePatternSearch(ArrayList<Stock> stocks) throws Exception {
+	private static ArrayList<String> getAllStocks(boolean stocksFromFile){
+		ArrayList<String> stocks = new ArrayList<>();
+		if (stocksFromFile) {
+			ArrayList<String> file = readFileToArr(System.getProperty("user.dir")+"\\src\\test\\resources\\stocksList");
+			for(String s : file) {
+				stocks.add(s.split("[|]")[1].trim());
+			}
+		} else {
+			HttpResponse<JsonNode> jsonResponse = null;
+			try {
+				jsonResponse = Unirest
+						.get("https://api.iextrading.com/1.0/ref-data/symbols")
+						.asJson();	
+			} catch (Exception e) {
+				System.exit(0);
+			}
+			if (jsonResponse != null && jsonResponse.getStatus() == 200) {
+				try {
+					JSONObject obj = new JSONObject(jsonResponse.getBody());
+					JSONArray arr = obj.getJSONArray("array");
+					for (int i=0; i<arr.length();i++) {
+						obj = (JSONObject) arr.get(i);
+						//System.out.println(obj.getString("symbol"));
+						stocks.add(obj.getString("symbol"));
+					}
+				} catch(Exception exception) {
+					System.out.println("stock list from web is not found");
+					System.exit(0);
+				}
+			}
+		}
+		
+		return stocks;
+	}
+	
+	private static void initiatePatternSearch(ArrayList<String> stocks) throws Exception {
 		System.out.println("program started");
 		String fileName = formatter.format(date);
 		
@@ -70,32 +103,28 @@ public class Main {
 	    PrintWriter morningStarWriter = new PrintWriter(filePathToMorningStar, "UTF-8");
 
 		int stockNum = 0;	
-		String symbol;
 		String patternFound;
-		for (Stock s : stocks) {
-			if (s.type.equals("cs") || s.type.equals("et")) {
-				System.out.println(++stockNum + ". Checking " + s.symbol);
-				symbol = s.symbol.replaceAll("[^A-Za-z0-9()\\[\\]]", "");
-				patternFound = findPatterns(symbol);
-				if (patternFound.equals(ERROR)) {
-					System.out.println("Found ERROR in stock " + symbol);
-					errorWriter.println(symbol);
-					haramiWriter.flush();
-				} else if (patternFound.equals(HARAMI)) {
-					System.out.println("Found HARAMI in stock " + symbol);
-					haramiWriter.println(symbol);
-					haramiWriter.flush();
-				} else if (patternFound.equals(PIERCING)) {
-					System.out.println("Found PIERCING in stock " + symbol);
-					piercingWriter.println(symbol);
-					piercingWriter.flush();
-				} else if (patternFound.equals(LOWVOLUME)) {
-					//MAYBE I WILL DO SOMETHING WITH THIS LATER
-				} else if (patternFound.equals(MORNINGSTAR)) {
-					System.out.println("Found MORNINGSTAR in stock " + symbol);
-					morningStarWriter.println(symbol);
-					morningStarWriter.flush();
-				}
+		for (String s : stocks) {
+			System.out.println(++stockNum + ". Checking " + s);
+			patternFound = findPatterns(s);
+			if (patternFound.equals(ERROR)) {
+				System.out.println("Found ERROR in stock " + s);
+				errorWriter.println(s);
+				haramiWriter.flush();
+			} else if (patternFound.equals(HARAMI)) {
+				System.out.println("Found HARAMI in stock " + s);
+				haramiWriter.println(s);
+				haramiWriter.flush();
+			} else if (patternFound.equals(PIERCING)) {
+				System.out.println("Found PIERCING in stock " + s);
+				piercingWriter.println(s);
+				piercingWriter.flush();
+			} else if (patternFound.equals(LOWVOLUME)) {
+				//MAYBE I WILL DO SOMETHING WITH THIS LATER
+			} else if (patternFound.equals(MORNINGSTAR)) {
+				System.out.println("Found MORNINGSTAR in stock " + s);
+				morningStarWriter.println(s);
+				morningStarWriter.flush();
 			}		
 		}
 		piercingWriter.close();
@@ -237,19 +266,7 @@ public class Main {
 	}
 	
 	
-	private static ArrayList<Stock> getAllStocks(){
-		ArrayList<Stock> stocks = new ArrayList<>();
-		ObjectMapper objectMapper = new ObjectMapper();
-		try {
-			stocks = objectMapper
-					 .readValue(Unirest.get("https://api.iextrading.com/1.0/ref-data/symbols")
-					 .asJson()
-					 .getRawBody(),new TypeReference<List<Stock>>(){});
-		} catch (Exception e) {
-			System.exit(0);
-		}
-		return stocks;
-	}
+
 	
 	private static ArrayList<String> readFileToArr(String filePath) {
 		 ArrayList<String> stocksToCheck = new ArrayList<String>();	 
