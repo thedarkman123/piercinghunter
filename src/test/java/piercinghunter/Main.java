@@ -229,7 +229,7 @@ public class Main {
 	private static boolean checkForEveningStar(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen,float twoDaysBeforeOpen,float twoDaysBeforeClose) {
 		if (twoDaysBeforeOpen < twoDaysBeforeClose) { //2 days before, trend up
 			if (dayBeforeClose > twoDaysBeforeClose && dayBeforeOpen > twoDaysBeforeClose ) { // the day before candle is above the one before
-				if (lastDayOpen < lastDayClose) { //downtrend in the last day
+				if (lastDayOpen > lastDayClose) { //downtrend in the last day
 					//calculate middle point of 2 days ago
 					float middlePoint = (twoDaysBeforeOpen + ((twoDaysBeforeClose - twoDaysBeforeOpen))/2);
 					if (lastDayClose < middlePoint ) {
