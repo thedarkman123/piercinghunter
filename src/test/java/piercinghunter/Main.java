@@ -50,12 +50,13 @@ public class Main {
 	 static float   priceFrom      = 2.50f;
 	 
 	 //LOGN PATTERNS
-	 public static final String HARAMI      = "HARAMI";
-	 public static final String ERROR       = "ERROR";
-	 public static final String LOWVOLUME   = "LOWVOLUME";
-	 public static final String PIERCING    = "PIERCING";
-	 public static final String NOTHING     = "NOTHING";
-	 public static final String MORNINGSTAR = "MORNINGSTAR";
+	 public static final String HARAMI       = "HARAMI";
+	 public static final String ERROR        = "ERROR";
+	 public static final String LOWVOLUME    = "LOWVOLUME";
+	 public static final String PIERCING     = "PIERCING";
+	 public static final String BESTPIERCING = "BESTPIERCING"; //much harsh statistics
+	 public static final String NOTHING      = "NOTHING";
+	 public static final String MORNINGSTAR  = "MORNINGSTAR";
 	 
 	 //SHORT PATTERNS
 	 public static final String EVENINGSTAR = "EVENINGSTAR";
@@ -68,6 +69,7 @@ public class Main {
 			confirmation("25_07_201813_35_58",PIERCING);
 			confirmation("25_07_201813_35_58",HARAMI);
 			confirmation("25_07_201813_35_58",MORNINGSTAR);
+			confirmation("25_07_201813_35_58",BESTPIERCING);
 		}
 		
 		if (findPatterns) {
@@ -115,19 +117,20 @@ public class Main {
 		String fileName = formatter.format(date);
 		
 		//paths to files
-		String filePathToEveningStar = System.getProperty("user.dir")+"\\src\\test\\resources\\eveningstar\\" + fileName +".txt";
-		String filePathToMorningStar = System.getProperty("user.dir")+"\\src\\test\\resources\\morningstar\\" + fileName +".txt";
-	    String filePathToPiercing    = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
-	    String filePathToHarami      = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
-	    String filePathToErrors      = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
-	    
+		String filePathToEveningStar  = System.getProperty("user.dir")+"\\src\\test\\resources\\eveningstar\\" + fileName +".txt";
+		String filePathToMorningStar  = System.getProperty("user.dir")+"\\src\\test\\resources\\morningstar\\" + fileName +".txt";
+	    String filePathToPiercing     = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
+	    String filePathToHarami       = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
+	    String filePathToErrors       = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
+	    String filePathToBestPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\bestpiercing\\" + fileName +".txt";
 	    
 	    //initiate writers
-	    PrintWriter piercingWriter    = new PrintWriter(filePathToPiercing, "UTF-8");
-	    PrintWriter haramiWriter      = new PrintWriter(filePathToHarami, "UTF-8");
-	    PrintWriter errorWriter       = new PrintWriter(filePathToErrors, "UTF-8");
-	    PrintWriter morningStarWriter = new PrintWriter(filePathToMorningStar, "UTF-8");
-	    PrintWriter eveningStarWriter = new PrintWriter(filePathToEveningStar, "UTF-8");
+	    PrintWriter bestPiercingWriter = new PrintWriter(filePathToBestPiercing, "UTF-8");
+	    PrintWriter piercingWriter     = new PrintWriter(filePathToPiercing, "UTF-8");
+	    PrintWriter haramiWriter       = new PrintWriter(filePathToHarami, "UTF-8");
+	    PrintWriter errorWriter        = new PrintWriter(filePathToErrors, "UTF-8");
+	    PrintWriter morningStarWriter  = new PrintWriter(filePathToMorningStar, "UTF-8");
+	    PrintWriter eveningStarWriter  = new PrintWriter(filePathToEveningStar, "UTF-8");
 
 		int stockNum = 0;	
 		String patternFound;
@@ -156,8 +159,13 @@ public class Main {
 				System.out.println("Found EVENINGSTAR in stock " + s);
 				eveningStarWriter.println(s);
 				eveningStarWriter.flush();
-			}		
+			} else if (patternFound.equals(BESTPIERCING)) {
+				System.out.println("Found BESTPIERCING in stock " + s);
+				bestPiercingWriter.println(s);
+				bestPiercingWriter.flush();
+			}
 		}
+		bestPiercingWriter.close();
 		piercingWriter.close();
 		haramiWriter.close();
 		errorWriter.close();
@@ -231,10 +239,11 @@ public class Main {
 		    	return NOTHING;
 		    }
 		    
-		    if (checkForBullishHarami()) return HARAMI;
-		    if (checkForPiercing())      return PIERCING;
-		    if (checkForMorningStar())   return MORNINGSTAR;
-		    if (checkForEveningStar())   return EVENINGSTAR;
+		    if (checkForSoftBullishHarami()) return HARAMI;
+		    if (checkForPiercing())          return PIERCING;
+		    if (checkForBestPiercing())      return BESTPIERCING;
+		    if (checkForMorningStar())       return MORNINGSTAR;
+		    if (checkForEveningStar())       return EVENINGSTAR;
 		   
         } catch (Exception e) {
         	 return NOTHING;
@@ -294,7 +303,7 @@ public class Main {
 		}
 	}
 	
-	private static boolean checkForBullishHarami() {//true to be in middle there as much as possible	
+	private static boolean checkForSoftBullishHarami() {//true to be in middle there as much as possible	
 	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
 		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
 		   		  if ((getDailyData(1).open > getDailyData(2).close) && (getDailyData(1).close < getDailyData(2).open)) {
@@ -333,17 +342,45 @@ public class Main {
 	   }
 	}
 	
+	//better piercing checker right now
+	private static boolean checkForBestPiercing() {
+	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
+	   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
+		    	if (getDailyData(1).open < getDailyData(2).close && 
+	    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
+		    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+		    		if (middlePoint < getDailyData(1).close) { //confirm good piercing
+		    			//now here we check if this is the best piercing
+		    			//3 days before,down down down!
+		    			if (getDailyData(3).close < getDailyData(3).open 
+					     && getDailyData(4).close < getDailyData(4).open
+					     && getDailyData(5).close < getDailyData(5).open) {
+		    			  return true;  //bestpiercingpattern,after downtrend!
+		    			} else {
+		    			  return false;  //piercing!
+		    			}
+		    			
+		    		} else {
+		    			return false; //no piercing
+		    		}		
+		    	} else {
+		    		return false; //the open is higher that the day before, or the same
+		    	}
+	    } else {
+	    	return false; //Continues down, nothing here
+	    }
+	   } else {
+		   return false; //day before uptrend
+	   }
+	}
+	
 	private static ArrayList<String> readFileToArr(String filePath) {
 		 ArrayList<String> stocksToCheck = new ArrayList<String>();	 
 		 try {	 
 			File f = new File(filePath);
-
             BufferedReader b = new BufferedReader(new FileReader(f));
-
             String readLine = "";
-
             System.out.println("Reading file using Buffered Reader");
-
             while ((readLine = b.readLine()) != null) {
             	stocksToCheck.add(readLine);
             }
