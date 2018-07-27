@@ -46,8 +46,8 @@ public class Main {
 	 static boolean checkPatterns  = false;
 	 static boolean findPatterns   = true;
 	 static boolean onlyHighVolume = true;
-	 static float   priceUntil     = 50;
-	 static float   priceFrom      = 2.50f;
+	 static float   priceUntil     = 100;
+	 static float   priceFrom      = 2;
 	 
 	 //LOGN PATTERNS
 	 public static final String HARAMI       = "HARAMI";
@@ -338,17 +338,26 @@ public class Main {
 	private static boolean checkForSoftBullishHarami() {//true to be in middle there as much as possible	
 	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
 		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
-		   		  if ((getDailyData(1).open > getDailyData(2).close) && (getDailyData(1).close < getDailyData(2).open)) {
-		   			float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
-		   			return getDailyData(1).close > middlePoint;
-		   		  } 
+		   		  if ((getDailyData(1).open > getDailyData(2).close) //today open bigger then 2 days ago close
+   				   && (getDailyData(1).close < getDailyData(2).open)) {// today close is lesser then yesterday open
+//		   			float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+//		   			return getDailyData(1).close > middlePoint;
+			   		  if ((getDailyData(1).open > getDailyData(2).close) //today open bigger then 2 days ago close
+			   		   && (getDailyData(1).close < getDailyData(2).open)) {// today close is lesser then yesterday open
+					   	   return ((getDailyData(1).low > getDailyData(2).low) //today open bigger then 2 days ago close
+						   		   && (getDailyData(1).high < getDailyData(2).high));			   			  
+			   		  } else {
+			   			  return false;
+			   		  }
+		   		  } else {
+		   			  return false;
+		   		  }
 		    } else {
 		    	return false; //Continues down, nothing here
 		    }
 	   } else {
 		   return false; //day before uptrend
 	   }
-	   return false;
 	}
 	
 	
