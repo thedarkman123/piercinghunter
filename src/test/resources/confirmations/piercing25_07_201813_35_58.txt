@@ -1,0 +1,27 @@
+ASTC: *** SUCCESS ***  from close: 4.8710623%, from high: 4.8710623%
+BCLI: *** SUCCESS ***  from close: 0.23365021%, from high: 3.6160924%
+BKEP: *** SUCCESS ***  from close: 0.0%, from high: 2.459018%
+BNO: *** SUCCESS ***  from close: 1.1494243%, from high: 1.5736765%
+BV: *** SUCCESS ***  from close: 0.21863203%, from high: 0.6313976%
+CCT: *** SUCCESS ***  from close: 0.059172954%, from high: 0.35399038%
+CETV: *FAILED*  from close: -2.5974064%, from high: 0.0%
+CMSS: *FAILED*  from close: -0.59820956%, from high: -0.1986143%
+DDE: *** SUCCESS ***  from close: -2.2580702%, from high: 3.3536553%
+ENLK: *** SUCCESS ***  from close: 3.9731085%, from high: 4.0317698%
+GE: *** SUCCESS ***  from close: -0.0762794%, from high: 0.22813487%
+HYEM: *** SUCCESS ***  from close: 0.47660577%, from high: 0.47660577%
+LIVX: *** SUCCESS ***  from close: 1.8248158%, from high: 3.0630643%
+MDGS: *** SUCCESS ***  from close: 0.89285636%, from high: 4.034585%
+MRUS: *** SUCCESS ***  from close: -3.1852808%, from high: 3.1578946%
+PGHY: *** SUCCESS ***  from close: -0.042717766%, from high: 0.1279347%
+PPR: *** SUCCESS ***  from close: -0.20079823%, from high: 0.20000458%
+REPL: *** SUCCESS ***  from close: 0.19827978%, from high: 1.6286645%
+RFCI: *** SUCCESS ***  from close: 4.2296675E-4%, from high: 0.1670882%
+RNGR: *** SUCCESS ***  from close: -1.0362734%, from high: 0.0051251254%
+SIEB: *** SUCCESS ***  from close: 0.0%, from high: 0.75997394%
+SOXS: *** SUCCESS ***  from close: -1.6409274%, from high: 3.8356173%
+SRTY: *** SUCCESS ***  from close: -0.88182914%, from high: 1.294224%
+SSRM: *** SUCCESS ***  from close: 2.0696168%, from high: 3.5217807%
+STON: *** SUCCESS ***  from close: 10.465123%, from high: 13.288292%
+TWM: *** SUCCESS ***  from close: -0.5738944%, from high: 0.9537215%
+TZA: *** SUCCESS ***  from close: -1.0392628%, from high: 1.4084507%

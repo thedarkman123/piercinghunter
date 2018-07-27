@@ -1,0 +1,34 @@
+AQUA: *** SUCCESS ***  from close: -1.170412%, from high: 1.7727245%
+ARLP: *** SUCCESS ***  from close: 0.0%, from high: 1.2820513%
+ARNC: *FAILED*  from close: -0.8826587%, from high: -0.051494483%
+BBD: *** SUCCESS ***  from close: 2.9726517%, from high: 3.886925%
+BCML: *** SUCCESS ***  from close: 1.1405246%, from high: 1.7408918%
+BNED: *** SUCCESS ***  from close: 0.0%, from high: 1.5679387%
+BVN: *** SUCCESS ***  from close: 1.1967078%, from high: 1.2705537%
+CDE: *** SUCCESS ***  from close: -0.62266743%, from high: 0.73710585%
+CSIQ: *** SUCCESS ***  from close: 2.5411074%, from high: 2.903949%
+CZZ: *** SUCCESS ***  from close: 2.1126795%, from high: 2.341918%
+DAKT: *** SUCCESS ***  from close: -0.9580829%, from high: 0.7067075%
+DBEM: *** SUCCESS ***  from close: 1.5919609%, from high: 1.6331633%
+FEDU: *FAILED*  from close: -0.80645084%, from high: 0.0%
+FRSX: *FAILED*  from close: -1.6447352%, from high: -0.32467502%
+GLOP: *** SUCCESS ***  from close: 0.81799895%, from high: 1.0204082%
+GLRE: *** SUCCESS ***  from close: -1.0752729%, from high: 0.7042213%
+GRPN: *** SUCCESS ***  from close: 9.10816%, from high: 10.800744%
+HFXE: *** SUCCESS ***  from close: 0.15021923%, from high: 0.15021923%
+I: *** SUCCESS ***  from close: 1.8145193%, from high: 2.3558958%
+KNL: *** SUCCESS ***  from close: -0.64695615%, from high: 0.5479403%
+LPL: *FAILED*  from close: -6.1068645%, from high: -4.6799297%
+MNOV: *** SUCCESS ***  from close: 4.5064387%, from high: 5.419769%
+PBI: *** SUCCESS ***  from close: -0.69123805%, from high: 0.45558047%
+RIGS: *** SUCCESS ***  from close: -0.24600808%, from high: 0.12254403%
+SPNE: *** SUCCESS ***  from close: 0.07788341%, from high: 1.0030873%
+SRAX: *** SUCCESS ***  from close: 0.7142851%, from high: 2.7495954%
+SRT: *** SUCCESS ***  from close: 2.9062123%, from high: 6.725891%
+TGI: *** SUCCESS ***  from close: 0.51812685%, from high: 0.7751918%
+TILE: *** SUCCESS ***  from close: 0.42373043%, from high: 1.260501%
+TITN: *FAILED*  from close: -4.241215%, from high: -0.12730429%
+TOO: *FAILED*  from close: -1.195218%, from high: 0.0%
+UGP: *** SUCCESS ***  from close: 4.176906%, from high: 5.4927325%
+XBIT: *** SUCCESS ***  from close: -0.45558047%, from high: 2.2173033%
+ZOES: *** SUCCESS ***  from close: 0.8514679%, from high: 1.3182707%

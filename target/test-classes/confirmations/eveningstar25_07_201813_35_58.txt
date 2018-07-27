@@ -1,0 +1,31 @@
+ABR: *** SUCCESS ***  from close: 0.805731%, from high: 1.3357046%
+ADMP: *** SUCCESS ***  from close: 0.0%, from high: 1.1857728%
+AMRN: *** SUCCESS ***  from close: -0.73529345%, from high: 1.0830315%
+AVID: *** SUCCESS ***  from close: -1.0526357%, from high: 3.3485658%
+BVX: *** SUCCESS ***  from close: 0.5780387%, from high: 0.76923007%
+CADC: *** SUCCESS ***  from close: 6.4748178%, from high: 8.450704%
+CLSD: *** SUCCESS ***  from close: -2.3706925%, from high: 2.1627192%
+CNX: *** SUCCESS ***  from close: 0.059172954%, from high: 0.6470624%
+COLL: *** SUCCESS ***  from close: 2.0009987%, from high: 3.734645%
+DLTH: *** SUCCESS ***  from close: 0.9712658%, from high: 2.0808342%
+DOC: *** SUCCESS ***  from close: 0.76045555%, from high: 1.2610328%
+EGY: *** SUCCESS ***  from close: 2.5559158%, from high: 2.8662467%
+EVH: *** SUCCESS ***  from close: 0.91742593%, from high: 1.1441647%
+FNB: *FAILED*  from close: -3.07814%, from high: -1.6342415%
+HBI: *** SUCCESS ***  from close: 0.3674778%, from high: 0.6413165%
+HT: *FAILED*  from close: -3.8443491%, from high: -1.0031888%
+HTLD: *** SUCCESS ***  from close: -1.43442%, from high: 0.176455%
+HZNP: *** SUCCESS ***  from close: 2.374223%, from high: 2.4293802%
+KBSF: *** SUCCESS ***  from close: -1.0060401%, from high: 0.47581616%
+LLEX: *FAILED*  from close: -0.93808997%, from high: -0.186224%
+ODT: *** SUCCESS ***  from close: -4.2763147%, from high: 0.045046072%
+PAR: *** SUCCESS ***  from close: 1.9261669%, from high: 3.06716%
+PGAL: *** SUCCESS ***  from close: 1.7611064%, from high: 1.7611064%
+RFIL: *** SUCCESS ***  from close: 1.1560628%, from high: 2.285712%
+RMT: *** SUCCESS ***  from close: 0.286257%, from high: 0.8538914%
+TRXC: *** SUCCESS ***  from close: 5.430711%, from high: 7.3394427%
+USX: *** SUCCESS ***  from close: -6.146924%, from high: 0.4219439%
+VIVO: *** SUCCESS ***  from close: 0.94637585%, from high: 1.2578604%
+VKTX: *** SUCCESS ***  from close: 1.8399246%, from high: 2.1100876%
+VTL: *** SUCCESS ***  from close: 0.0%, from high: 2.3255901%
+ZIONZ: *FAILED*  from close: -3.322471%, from high: -1.4715261%

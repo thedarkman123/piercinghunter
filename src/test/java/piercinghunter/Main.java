@@ -11,7 +11,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import javax.swing.text.StyledEditorKit.ForegroundAction;
 
@@ -25,14 +29,25 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 
 public class Main {
+	
+	 //TODO - BETTER PIERCINGS ARE THE ONES WITH VOLUME BETTER THEN THE LAST DAY (MORE CHANCES)
+	 //SHOULD BE CONFIRMED TODAY 
+	
+	//TODO - GET YEAR DATA, AVERAGE OF VOLUME MORE THAN 500000 AND WE ARE ALL GOOD 
+	
+	//TODO - WORKING WITH OBJECT CLOSE OPEN HIGH LOW
+	
+	
      //8633 stocks checked
 	 static	SimpleDateFormat formatter = new SimpleDateFormat("dd_MM_yyyyHH_mm_ss");  
 	 static Date date = new Date(); 
+	 static TreeMap<String,DailyStockInfo> dailyStocksInfoObject = new TreeMap<>();
 	 
-	 static boolean findPatterns = true;
+	 static boolean checkPatterns  = false;
+	 static boolean findPatterns   = true;
 	 static boolean onlyHighVolume = true;
-	 static float   priceUntil = 25;
-	 static float   priceFrom  = 2.50f;
+	 static float   priceUntil     = 50;
+	 static float   priceFrom      = 2.50f;
 	 
 	 //LOGN PATTERNS
 	 public static final String HARAMI      = "HARAMI";
@@ -48,14 +63,17 @@ public class Main {
 	 
 	public static void main(String[] args) throws Exception {
 		
-		//confirmations, put file path
-		//confirmation("23_07_201812_06_10",HARAMI);
+		if(checkPatterns) {
+			confirmation("25_07_201813_35_58",EVENINGSTAR); //in the meantime, failed is pass
+			confirmation("25_07_201813_35_58",PIERCING);
+			confirmation("25_07_201813_35_58",HARAMI);
+			confirmation("25_07_201813_35_58",MORNINGSTAR);
+		}
 		
 		if (findPatterns) {
 			ArrayList<String>  stocks = getAllStocks(true);
 			initiatePatternSearch(stocks);
 		}	
-//		System.out.println(findPatterns("NEXT"));
 	}
 	
 	private static ArrayList<String> getAllStocks(boolean stocksFromFile){
@@ -80,7 +98,6 @@ public class Main {
 					JSONArray arr = obj.getJSONArray("array");
 					for (int i=0; i<arr.length();i++) {
 						obj = (JSONObject) arr.get(i);
-						//System.out.println(obj.getString("symbol"));
 						stocks.add(obj.getString("symbol"));
 					}
 				} catch(Exception exception) {
@@ -152,7 +169,7 @@ public class Main {
 	private static String findPatterns(String stock) throws Exception {
 		//get stock data
 		HttpResponse<JsonNode> jsonResponse = null;
-		JSONObject dailyStockInfo = new JSONObject();
+		JSONObject dailyStockInfoJsonObject = new JSONObject();
 		try {
 			jsonResponse = Unirest
 					.get("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol="+ stock + "&apikey=C0F6Z5D4ELEKDZ0U")
@@ -168,7 +185,7 @@ public class Main {
 			JSONArray arr = obj.getJSONArray("array");
 			try {
 				//try get stock info
-				dailyStockInfo = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
+				dailyStockInfoJsonObject = arr.getJSONObject(0).getJSONObject("Time Series (Daily)");
 			} catch(Exception exception) {
 				//if error get all the errors stocks into a list
 				System.out.println("Error here, this is the json for stock " + stock);
@@ -180,45 +197,45 @@ public class Main {
 			return ERROR;
 		}
 
-		//sort the data (dates), and check volume info
-		List<String> jsonValues = new ArrayList<String>();
-		int volume = 0;
-		int biggestVolume = 0;
-	    for (int i = 0; i < dailyStockInfo.names().length(); i++) {
-	    	jsonValues.add(((String)dailyStockInfo.names().get(i)));
-	    	volume = dailyStockInfo.getJSONObject(jsonValues.get(i)).getInt("5. volume");
-	    	if (biggestVolume < volume) {
-	    		biggestVolume = volume;
-	    	} 	
+		DailyStockInfo stockInfo;
+		String key;
+	    for (int i = 0; i < dailyStockInfoJsonObject.names().length(); i++) {
+	    	key = (String)dailyStockInfoJsonObject.names().get(i);
+	    	stockInfo = new DailyStockInfo();
+	    	stockInfo.date   = key;
+			stockInfo.open   = dailyStockInfoJsonObject.getJSONObject(key).getFloat("1. open");
+			stockInfo.high   = dailyStockInfoJsonObject.getJSONObject(key).getFloat("2. high");
+			stockInfo.low    = dailyStockInfoJsonObject.getJSONObject(key).getFloat("3. low");
+			stockInfo.close  = dailyStockInfoJsonObject.getJSONObject(key).getFloat("4. close");
+			stockInfo.volume = dailyStockInfoJsonObject.getJSONObject(key).getInt("5. volume"); 
+			dailyStocksInfoObject.put(key, stockInfo);
 	    }
-	    if (onlyHighVolume) {
-	    	if (biggestVolume < 500000) {
-	    		return LOWVOLUME;
+	    
+	    //only high volume stocks
+	    if (onlyHighVolume) { //get all data, do average volume on it
+	    	long volumeAverage = 0;
+	    	for (Map.Entry<String, DailyStockInfo> entry : dailyStocksInfoObject.entrySet())
+	    	{
+	    		volumeAverage += entry.getValue().volume;
+	    	}
+	    	if (volumeAverage/dailyStocksInfoObject.size() < 500000){		
+	    		return NOTHING;
 	    	}
 	    }
-        Collections.sort(jsonValues);
-        
+	    	      
         try {
-        	   //get all needed data	    
-    	    float lastDayClose    = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("4. close"); 
-    	    float lastDayOpen     = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-1)).getFloat("1. open"); 
-    	    float dayBeforeClose  = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("4. close");
-    	    float dayBeforeOpen   = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-2)).getFloat("1. open"); 
-    	    
-    	    //filter those with not wanted prices
-    	    if (lastDayClose < priceFrom || lastDayClose > priceUntil) {
-    	    	return NOTHING;
-    	    }
-    	    
-    	    //for morning and evening star
-    	    float twoDaysBeforeOpen  = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-3)).getFloat("1. open");
-    	    float twoDaysBeforeClose = dailyStockInfo.getJSONObject(jsonValues.get(jsonValues.size()-3)).getFloat("4. close");
-    	    
-    	    if (checkForHarami(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen))   return HARAMI;
-    	    if (checkForPiercing(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen)) return PIERCING;
-    	    if (checkForMorningStar(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen,twoDaysBeforeOpen,twoDaysBeforeClose)) return MORNINGSTAR;
-    	    if (checkForEveningStar(lastDayClose,lastDayOpen,dayBeforeClose,dayBeforeOpen,twoDaysBeforeOpen,twoDaysBeforeClose)) return EVENINGSTAR;
-    	    
+		    
+		    //only stocks between 2 prices
+		    if (getDailyData(1).close < priceFrom ||
+	    		getDailyData(1).close > priceUntil) {
+		    	return NOTHING;
+		    }
+		    
+		    if (checkForBullishHarami()) return HARAMI;
+		    if (checkForPiercing())      return PIERCING;
+		    if (checkForMorningStar())   return MORNINGSTAR;
+		    if (checkForEveningStar())   return EVENINGSTAR;
+		   
         } catch (Exception e) {
         	 return NOTHING;
         }
@@ -226,13 +243,19 @@ public class Main {
         return NOTHING;	    
 	}
 	
-	private static boolean checkForEveningStar(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen,float twoDaysBeforeOpen,float twoDaysBeforeClose) {
-		if (twoDaysBeforeOpen < twoDaysBeforeClose) { //2 days before, trend up
-			if (dayBeforeClose > twoDaysBeforeClose && dayBeforeOpen > twoDaysBeforeClose ) { // the day before candle is above the one before
-				if (lastDayOpen > lastDayClose) { //downtrend in the last day
+	private static DailyStockInfo getDailyData(int daysAgo) {
+		Object[] keys = dailyStocksInfoObject.keySet().toArray();
+		return dailyStocksInfoObject.get(keys[keys.length-daysAgo]);
+	}
+	
+	private static boolean checkForEveningStar() {
+		if (getDailyData(3).open < getDailyData(3).close) { //2 days before, trend up
+			if (getDailyData(2).close > getDailyData(3).close
+		     && getDailyData(2).open > getDailyData(3).close ) { // the day before candle is above the one before
+				if (getDailyData(1).open > getDailyData(1).close) { //downtrend in the last day
 					//calculate middle point of 2 days ago
-					float middlePoint = (twoDaysBeforeOpen + ((twoDaysBeforeClose - twoDaysBeforeOpen))/2);
-					if (lastDayClose < middlePoint ) {
+					float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+					if (getDailyData(1).close < middlePoint ) {
 						return true; //potential evening star
 					} else {
 						return false;
@@ -248,13 +271,14 @@ public class Main {
 		}
 	}
 	
-	private static boolean checkForMorningStar(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen,float twoDaysBeforeOpen,float twoDaysBeforeClose) {
-		if (twoDaysBeforeOpen > twoDaysBeforeClose) { //2 days before, trend down
-			if (dayBeforeClose < twoDaysBeforeClose && dayBeforeOpen < twoDaysBeforeClose ) { // the day before candle is below the one before
-				if (lastDayOpen < lastDayClose) { //uptrend in the last day
+	private static boolean checkForMorningStar() {
+		if (getDailyData(3).open > getDailyData(3).close) { //2 days before, trend down
+			if (getDailyData(2).close < getDailyData(3).close 
+			 && getDailyData(2).open < getDailyData(3).close ) { // the day before candle is below the one before
+				if (getDailyData(1).open < getDailyData(1).close) { //uptrend in the last day
 					//calculate middle point of 2 days ago
-					float middlePoint = (twoDaysBeforeOpen + ((twoDaysBeforeClose - twoDaysBeforeOpen))/2);
-					if (lastDayClose > middlePoint ) {
+					float middlePoint = (getDailyData(3).open + ((getDailyData(3).close - getDailyData(3).open))/2);
+					if (getDailyData(1).close > middlePoint ) {
 						return true; //potential morning star
 					} else {
 						return false;
@@ -270,12 +294,12 @@ public class Main {
 		}
 	}
 	
-	private static boolean checkForHarami(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {		
-	    if (dayBeforeClose < dayBeforeOpen) { //day before trend down
-		   	 if (lastDayClose > lastDayOpen) {//last day trend up
-		   		  if ((lastDayOpen > dayBeforeClose) && (lastDayClose < dayBeforeOpen)) {
-		   			//let's make it much better
-		   			return true; //Potential Harami
+	private static boolean checkForBullishHarami() {//true to be in middle there as much as possible	
+	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
+		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
+		   		  if ((getDailyData(1).open > getDailyData(2).close) && (getDailyData(1).close < getDailyData(2).open)) {
+		   			float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+		   			return getDailyData(1).close > middlePoint;
 		   		  } 
 		    } else {
 		    	return false; //Continues down, nothing here
@@ -286,12 +310,14 @@ public class Main {
 	   return false;
 	}
 	
-	private static boolean checkForPiercing(float lastDayClose,float lastDayOpen,float dayBeforeClose,float dayBeforeOpen) {
-	    if (dayBeforeClose < dayBeforeOpen) { //day before trend down
-	   	 if (lastDayClose > lastDayOpen) {//last day trend up
-		    	if (lastDayOpen < dayBeforeClose) { //the open last day, is lower then close day before
-		    		float middlePoint = (dayBeforeOpen + ((dayBeforeClose - dayBeforeOpen))/2);
-		    		if (middlePoint < lastDayClose) { //confirm piercing
+	//better piercing checker right now
+	private static boolean checkForPiercing() {
+	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
+	   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
+		    	if (getDailyData(1).open < getDailyData(2).close && 
+	    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
+		    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+		    		if (middlePoint < getDailyData(1).close) { //confirm piercing
 		    			return true;  //piercing!
 		    		} else {
 		    			return false; //no piercing
@@ -306,9 +332,6 @@ public class Main {
 		   return false; //day before uptrend
 	   }
 	}
-	
-	
-
 	
 	private static ArrayList<String> readFileToArr(String filePath) {
 		 ArrayList<String> stocksToCheck = new ArrayList<String>();	 
