@@ -239,9 +239,11 @@ public class Main {
 		    	return NOTHING;
 		    }
 		    
+		    String piercingStatus =  checkForPiercing();
+		    if (!piercingStatus.equals(NOTHING)) {
+		    	return piercingStatus;
+		    }
 		    if (checkForSoftBullishHarami()) return HARAMI;
-		    if (checkForPiercing())          return PIERCING;
-		    if (checkForBestPiercing())      return BESTPIERCING;
 		    if (checkForMorningStar())       return MORNINGSTAR;
 		    if (checkForEveningStar())       return EVENINGSTAR;
 		   
@@ -250,6 +252,36 @@ public class Main {
         }
      
         return NOTHING;	    
+	}
+	
+	private static String checkForPiercing() {
+	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
+		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
+			    	if (getDailyData(1).open < getDailyData(2).close && 
+		    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
+			    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+			    		if (middlePoint < getDailyData(1).close) { //confirm good piercing
+			    			//now here we check if this is the best piercing
+			    			//3 days before,down down down!
+			    			if (getDailyData(3).close < getDailyData(3).open 
+						     && getDailyData(4).close < getDailyData(4).open
+						     && getDailyData(5).close < getDailyData(5).open) {
+			    			  return BESTPIERCING;  //bestpiercingpattern,after downtrend!
+			    			} else {
+			    			  return PIERCING;  //piercing!
+			    			}		    			
+			    		} else {
+			    			return NOTHING; //no piercing
+			    		}		
+			    	} else {
+			    		return NOTHING; //the open is higher that the day before, or the same
+			    	}
+		    } else {
+		    	return NOTHING; //Continues down, nothing here
+		    }
+		   } else {
+			   return NOTHING; //day before uptrend
+		   }
 	}
 	
 	private static DailyStockInfo getDailyData(int daysAgo) {
@@ -319,60 +351,6 @@ public class Main {
 	   return false;
 	}
 	
-	//better piercing checker right now
-	private static boolean checkForPiercing() {
-	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
-	   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
-		    	if (getDailyData(1).open < getDailyData(2).close && 
-	    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
-		    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
-		    		if (middlePoint < getDailyData(1).close) { //confirm piercing
-		    			return true;  //piercing!
-		    		} else {
-		    			return false; //no piercing
-		    		}		
-		    	} else {
-		    		return false; //the open is higher that the day before, or the same
-		    	}
-	    } else {
-	    	return false; //Continues down, nothing here
-	    }
-	   } else {
-		   return false; //day before uptrend
-	   }
-	}
-	
-	//better piercing checker right now
-	private static boolean checkForBestPiercing() {
-	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
-	   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
-		    	if (getDailyData(1).open < getDailyData(2).close && 
-	    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
-		    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
-		    		if (middlePoint < getDailyData(1).close) { //confirm good piercing
-		    			//now here we check if this is the best piercing
-		    			//3 days before,down down down!
-		    			if (getDailyData(3).close < getDailyData(3).open 
-					     && getDailyData(4).close < getDailyData(4).open
-					     && getDailyData(5).close < getDailyData(5).open) {
-		    			  return true;  //bestpiercingpattern,after downtrend!
-		    			} else {
-		    			  return false;  //piercing!
-		    			}
-		    			
-		    		} else {
-		    			return false; //no piercing
-		    		}		
-		    	} else {
-		    		return false; //the open is higher that the day before, or the same
-		    	}
-	    } else {
-	    	return false; //Continues down, nothing here
-	    }
-	   } else {
-		   return false; //day before uptrend
-	   }
-	}
 	
 	private static ArrayList<String> readFileToArr(String filePath) {
 		 ArrayList<String> stocksToCheck = new ArrayList<String>();	 
