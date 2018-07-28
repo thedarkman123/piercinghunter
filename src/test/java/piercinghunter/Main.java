@@ -59,19 +59,21 @@ public class Main {
 	 public static final String MORNINGSTAR  = "MORNINGSTAR";
 	 
 	 //SHORT PATTERNS
-	 public static final String EVENINGSTAR = "EVENINGSTAR";
+	 public static final String EVENINGSTAR      = "EVENINGSTAR";
+	 public static final String THREEBLACKCROWS  = "THREEBLACKCROWS";
+	 public static final String TWOBLOCKGAPPING  = "TWOBLOCKGAPPING";
 	 
 	 
 	public static void main(String[] args) throws Exception {
 		
-		if(checkPatterns) {
-			confirmation("25_07_201813_35_58",EVENINGSTAR); //in the meantime, failed is pass
-			confirmation("25_07_201813_35_58",PIERCING);
-			confirmation("25_07_201813_35_58",HARAMI);
-			confirmation("25_07_201813_35_58",MORNINGSTAR);
-			confirmation("25_07_201813_35_58",BESTPIERCING);
-		}
-		
+//		if(checkPatterns) {
+//			confirmation("25_07_201813_35_58",EVENINGSTAR); //in the meantime, failed is pass
+//			confirmation("25_07_201813_35_58",PIERCING);
+//			confirmation("25_07_201813_35_58",HARAMI);
+//			confirmation("25_07_201813_35_58",MORNINGSTAR);
+//			//confirmation("25_07_201813_35_58",BESTPIERCING);
+//		}
+//		
 		if (findPatterns) {
 			ArrayList<String>  stocks = getAllStocks(true);
 			initiatePatternSearch(stocks);
@@ -117,12 +119,15 @@ public class Main {
 		String fileName = formatter.format(date);
 		
 		//paths to files
-		String filePathToEveningStar  = System.getProperty("user.dir")+"\\src\\test\\resources\\eveningstar\\" + fileName +".txt";
-		String filePathToMorningStar  = System.getProperty("user.dir")+"\\src\\test\\resources\\morningstar\\" + fileName +".txt";
-	    String filePathToPiercing     = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
-	    String filePathToHarami       = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
-	    String filePathToErrors       = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
-	    String filePathToBestPiercing = System.getProperty("user.dir")+"\\src\\test\\resources\\bestpiercing\\" + fileName +".txt";
+		String filePathToEveningStar     = System.getProperty("user.dir")+"\\src\\test\\resources\\eveningstar\\" + fileName +".txt";
+		String filePathToMorningStar     = System.getProperty("user.dir")+"\\src\\test\\resources\\morningstar\\" + fileName +".txt";
+	    String filePathToPiercing        = System.getProperty("user.dir")+"\\src\\test\\resources\\piercing\\" + fileName +".txt";
+	    String filePathToHarami          = System.getProperty("user.dir")+"\\src\\test\\resources\\harami\\" + fileName +".txt";
+	    String filePathToErrors          = System.getProperty("user.dir")+"\\src\\test\\resources\\error\\" + fileName +".txt";
+	    String filePathToBestPiercing    = System.getProperty("user.dir")+"\\src\\test\\resources\\bestpiercing\\" + fileName +".txt";
+	    String filePathToTwoBlackGapping = System.getProperty("user.dir")+"\\src\\test\\resources\\twoblackgapping\\" + fileName +".txt";
+	    String filePathToThreeBlackCrows = System.getProperty("user.dir")+"\\src\\test\\resources\\threeblackcrows\\" + fileName +".txt";
+	    
 	    
 	    //initiate writers
 	    PrintWriter bestPiercingWriter = new PrintWriter(filePathToBestPiercing, "UTF-8");
@@ -131,7 +136,10 @@ public class Main {
 	    PrintWriter errorWriter        = new PrintWriter(filePathToErrors, "UTF-8");
 	    PrintWriter morningStarWriter  = new PrintWriter(filePathToMorningStar, "UTF-8");
 	    PrintWriter eveningStarWriter  = new PrintWriter(filePathToEveningStar, "UTF-8");
-
+	    PrintWriter threeBlackCrows    = new PrintWriter(filePathToThreeBlackCrows, "UTF-8");
+	    PrintWriter twoBlackGapping    = new PrintWriter(filePathToTwoBlackGapping, "UTF-8");
+	    
+	    
 		int stockNum = 0;	
 		String patternFound;
 		for (String s : stocks) {
@@ -163,14 +171,25 @@ public class Main {
 				System.out.println("Found BESTPIERCING in stock " + s);
 				bestPiercingWriter.println(s);
 				bestPiercingWriter.flush();
+			} else if(patternFound.equals(THREEBLACKCROWS)) {
+				System.out.println("Found THREEBLACKCROWS in stock " + s);
+				threeBlackCrows.println(s);
+				threeBlackCrows.flush();
+			} else if(patternFound.equals(TWOBLOCKGAPPING)){
+				System.out.println("Found TWOBLOCKGAPPING in stock " + s);
+				twoBlackGapping.println(s);
+				twoBlackGapping.flush();
 			}
 		}
+		
 		bestPiercingWriter.close();
 		piercingWriter.close();
 		haramiWriter.close();
 		errorWriter.close();
 		morningStarWriter.close();
 		eveningStarWriter.close();
+		twoBlackGapping.close();
+		threeBlackCrows.close();
 		System.out.println("program Done");
 	}
 	
@@ -226,7 +245,7 @@ public class Main {
 	    	{
 	    		volumeAverage += entry.getValue().volume;
 	    	}
-	    	if (volumeAverage/dailyStocksInfoObject.size() < 500000){		
+	    	if (volumeAverage/dailyStocksInfoObject.size() < 500000){	
 	    		return NOTHING;
 	    	}
 	    }
@@ -243,9 +262,13 @@ public class Main {
 		    if (!piercingStatus.equals(NOTHING)) {
 		    	return piercingStatus;
 		    }
-		    if (checkForSoftBullishHarami()) return HARAMI;
+		    String crowsOrGapping =  checkForCrowsGapping();
+		    if (!crowsOrGapping.equals(NOTHING)) {
+		    	return crowsOrGapping;
+		    }
+		    if (checkForSoftBullishHarami()) return HARAMI; //Checked
 		    if (checkForMorningStar())       return MORNINGSTAR;
-		    if (checkForEveningStar())       return EVENINGSTAR;
+		    if (checkForEveningStar())       return EVENINGSTAR; //Checked
 		   
         } catch (Exception e) {
         	 return NOTHING;
@@ -254,15 +277,41 @@ public class Main {
         return NOTHING;	    
 	}
 	
+	private static String checkForCrowsGapping() {
+	    if (getDailyData(3).close < getDailyData(3).open) { //three days before trend down
+	   	    if (getDailyData(2).close < getDailyData(2).open) {//two days before trend down
+			    if (getDailyData(1).close < getDailyData(1).open) { //one day before trend down
+			    	if (getDailyData(1).low < getDailyData(2).low 
+	    			 && getDailyData(2).low < getDailyData(3).low) {
+			    		if (getDailyData(3).low > getDailyData(2).high) { //two gapping here
+			    			return TWOBLOCKGAPPING;
+			    		} else {
+			    			return THREEBLACKCROWS;
+			    		}
+			    	} else {
+			    		return NOTHING;
+			    	}
+			    } else {
+			    	return NOTHING; //Continues down, nothing here
+			    }
+		    } else {
+		    	return NOTHING; //Continues down, nothing here
+		    }
+	    } else {
+		   return NOTHING; //day before uptrend
+	    }
+	}
+	
 	private static String checkForPiercing() {
 	    if (getDailyData(2).close < getDailyData(2).open) { //day before trend down
 		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
-			    	if (getDailyData(1).open < getDailyData(2).close && 
-		    			getDailyData(2).low >  getDailyData(1).low) { //the open last day, is lower then close day before
+			    	if ((getDailyData(1).open < getDailyData(2).close) && 
+		    			(getDailyData(2).low >  getDailyData(1).low)) { //the open last day, is lower then close day before
 			    		float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
 			    		if (middlePoint < getDailyData(1).close) { //confirm good piercing
 			    			//now here we check if this is the best piercing
 			    			//3 days before,down down down!
+			    			System.out.println("%%%%%%%%%%% piercing found");
 			    			if (getDailyData(3).close < getDailyData(3).open 
 						     && getDailyData(4).close < getDailyData(4).open
 						     && getDailyData(5).close < getDailyData(5).open) {
@@ -293,9 +342,11 @@ public class Main {
 		if (getDailyData(3).open < getDailyData(3).close) { //2 days before, trend up
 			if (getDailyData(2).close > getDailyData(3).close
 		     && getDailyData(2).open > getDailyData(3).close ) { // the day before candle is above the one before
-				if (getDailyData(1).open > getDailyData(1).close) { //downtrend in the last day
+				if (getDailyData(1).open > getDailyData(1).close //downtrend in the last day
+				&&  getDailyData(1).open < getDailyData(2).close 
+				&&  getDailyData(1).open < getDailyData(2).open) { 
 					//calculate middle point of 2 days ago
-					float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
+					float middlePoint = (getDailyData(3).open + ((getDailyData(3).close - getDailyData(3).open))/2);
 					if (getDailyData(1).close < middlePoint ) {
 						return true; //potential evening star
 					} else {
@@ -316,7 +367,9 @@ public class Main {
 		if (getDailyData(3).open > getDailyData(3).close) { //2 days before, trend down
 			if (getDailyData(2).close < getDailyData(3).close 
 			 && getDailyData(2).open < getDailyData(3).close ) { // the day before candle is below the one before
-				if (getDailyData(1).open < getDailyData(1).close) { //uptrend in the last day
+				if (getDailyData(1).open < getDailyData(1).close
+				&&  getDailyData(1).open > getDailyData(2).close 
+				&&  getDailyData(1).open > getDailyData(2).open) { //uptrend in the last day
 					//calculate middle point of 2 days ago
 					float middlePoint = (getDailyData(3).open + ((getDailyData(3).close - getDailyData(3).open))/2);
 					if (getDailyData(1).close > middlePoint ) {
@@ -340,8 +393,6 @@ public class Main {
 		   	 if (getDailyData(1).close > getDailyData(1).open) {//last day trend up
 		   		  if ((getDailyData(1).open > getDailyData(2).close) //today open bigger then 2 days ago close
    				   && (getDailyData(1).close < getDailyData(2).open)) {// today close is lesser then yesterday open
-//		   			float middlePoint = (getDailyData(2).open + ((getDailyData(2).close - getDailyData(2).open))/2);
-//		   			return getDailyData(1).close > middlePoint;
 			   		  if ((getDailyData(1).open > getDailyData(2).close) //today open bigger then 2 days ago close
 			   		   && (getDailyData(1).close < getDailyData(2).open)) {// today close is lesser then yesterday open
 					   	   return ((getDailyData(1).low > getDailyData(2).low) //today open bigger then 2 days ago close
